@@ -1,0 +1,103 @@
+{{- $PVName := include "api-wrapper.name" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-dep
+  labels:
+    {{- include "api-wrapper.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    {{- toYaml .Values.strategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "api-wrapper.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "api-wrapper.selectorLabels" . | nindent 8 }}
+    spec:
+      strategy:
+        type: Recreate
+    {{- if .Values.imagePullSecrets.enabled }}
+      imagePullSecrets:
+        - name: {{  .Values.imagePullSecrets.name }}
+    {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          env:
+{{ toYaml .Values.env | indent 12 }}
+          ports:
+          {{- range $key, $value := .Values.containerPort }}
+            - name: {{ $key }}
+              containerPort: {{ $value }}
+              protocol: TCP
+          {{- end }}
+          {{- if $.Values.probes.liveness.enabled }}
+          livenessProbe:
+            initialDelaySeconds: {{ $.Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ $.Values.probes.liveness.periodSeconds }}
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: {{ .Values.service.targetPorts }}
+          {{- end }}
+          {{- if $.Values.probes.readiness.enabled }}
+          readinessProbe:
+            initialDelaySeconds: {{ $.Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ $.Values.probes.readiness.periodSeconds }}
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: {{ .Values.service.targetPorts }}
+          {{- end }}
+        {{- if or $.Values.persistentVolume.enabled $.Values.environment.enabled }}
+          volumeMounts:
+        {{- end -}}
+          {{- if $.Values.environment.enabled }}
+            - name: "environment-config"
+              mountPath: {{ $.Values.environment.mountPath }}
+          {{- end }}
+          {{- if $.Values.persistentVolume.enabled }}
+            - name: "{{ $PVName }}-logs-pvmount"
+              mountPath: "{{ $.Values.persistentVolume.mountPath }}"
+              subPath: "{{ $.Values.persistentVolume.subPath }}"
+          {{- end }}
+          {{- if $.Values.dataPersistentVolume.enabled }}
+            - name: "{{ $PVName }}-data-pvmount"
+              mountPath: "{{ $.Values.dataPersistentVolume.mountPath }}"
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if or $.Values.persistentVolume.enabled $.Values.environment.enabled }}
+      volumes:
+      {{- end -}}
+        {{- if $.Values.persistentVolume.enabled }}
+        - name: {{ $PVName }}-logs-pvmount
+          persistentVolumeClaim:
+            claimName: {{ if $.Values.persistentVolume.PVClaim }}{{ $.Values.persistentVolume.PVClaim }}{{- else }}" " {{- end }}
+        {{- end -}}
+        {{- if $.Values.dataPersistentVolume.enabled }}
+        - name: {{ $PVName }}-data-pvmount
+          persistentVolumeClaim:
+            claimName: {{ if $.Values.dataPersistentVolume.PVClaim }}{{ $.Values.dataPersistentVolume.PVClaim }}{{- else }}" " {{- end }}
+        {{- end -}}
+        {{- if $.Values.environment.enabled }}
+        - name: environment-config
+          configMap:
+            name: {{ .Release.Name }}-env-config
+          {{- end -}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

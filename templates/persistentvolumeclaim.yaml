@@ -1,0 +1,28 @@
+{{- if $.Values.persistentVolume.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "{{ $.Values.persistentVolume.size }}"
+  storageClassName: {{ .Release.Name }}-stc
+{{- end }}
+
+---
+{{- if $.Values.dataPersistentVolume.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "{{ $.Values.dataPersistentVolume.size }}"
+  storageClassName: {{ .Release.Name }}-stc
+{{- end }}

@@ -1,0 +1,146 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 5
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 25%
+    maxUnavailable: 25%
+
+image:
+  repository: "<<container_registry_name>>/api-wrapper"
+  tag: "<<build_tag>>"
+  pullPolicy: IfNotPresent
+  
+imagePullSecrets:
+# - name: secretName
+    enabled: true
+    name:  acr-sec
+       # Default values for whsitbtsdevnextgen.
+
+env:
+  - name: JAVA_OPTIONS
+    value: "-Dspring.profiles.active=${ENVIRONMENT}"
+
+
+  # - name: CONTEXT_ENVIRONMENT
+  #   value: qa
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+containerPort:
+    http: 8080
+
+  
+service:
+  type: ClusterIP
+  port: 8043
+  targetPorts: 8080
+  nodePorts:
+      http: ""
+
+ingress:
+  enabled: true 
+  annotations: 
+    nginx.ingress.kubernetes.io/client-body-buffer-size: "5M"
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  
+  hosts:
+    - host: "api-wrapper.devops-learning.com"
+      paths: [/invoke]
+  tls:
+     - secretName: tls-sec
+       hosts:
+        - api-wrapper.devops-learning.com
+
+resources: 
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  requests:
+    cpu: "1"
+    memory: 1000Mi
+  limits:
+    cpu: "3"
+    memory: 2000Mi
+
+nodeSelector: {"agentpool":"default-pool"}
+
+tolerations: []
+
+affinity: {}
+
+
+persistentVolume:
+   enabled: true
+   name: "api-wrapper-logs-pv"
+   accessModes: ReadWriteMany
+   annotations: {}
+   PVClaim: "api-wrapper-logs-pvc"
+   mountPath: "/opt/logs"
+   size: 20Gi
+   subPath: "api-wrapper-logs-<<environment>>"
+
+dataPersistentVolume:
+   enabled: true
+   name: "api-wrapper-data-pv"
+   accessModes: ReadWriteMany
+   annotations: {}
+   PVClaim: "api-wrapper-data-pvc"
+   mountPath: "/opt/data"
+   size: 5Gi
+
+storageClass:
+   enabled: flase
+   name:
+   provisioner: "kubernetes.io/gce-pd"
+   type: pd-standard
+   fstype: ext4
+probes:
+  liveness:
+    enabled: false
+    path: "/api-wrapper"
+    initialDelaySeconds: "5"
+    periodSeconds: "5"
+  readiness:
+    enabled: false
+    path: "/api-wrapper"
+    initialDelaySeconds: "5"
+    periodSeconds: "5"
+    
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 50
+  targetMemoryUtilizationPercentage: 50
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
