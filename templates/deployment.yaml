@@ -1,21 +1,21 @@
-{{- $PVName := include "api-wrapper.name" . -}}
+{{- $PVName := include "<<app_name>>.name" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}-dep
   labels:
-    {{- include "api-wrapper.labels" . | nindent 4 }}
+    {{- include "<<app_name>>.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
     {{- toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
-      {{- include "api-wrapper.selectorLabels" . | nindent 6 }}
+      {{- include "<<app_name>>.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "api-wrapper.selectorLabels" . | nindent 8 }}
+        {{- include "<<app_name>>.selectorLabels" . | nindent 8 }}
     spec:
       strategy:
         type: Recreate
@@ -29,6 +29,10 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          {{- if .Values.securityContext }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- end }}
           env:
 {{ toYaml .Values.env | indent 12 }}
           ports:

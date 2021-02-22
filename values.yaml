@@ -10,7 +10,7 @@ strategy:
     maxUnavailable: 25%
 
 image:
-  repository: "<<container_registry_name>>/api-wrapper"
+  repository: "<<container_registry_name>>/<<app_name>>"
   tag: "<<build_tag>>"
   pullPolicy: IfNotPresent
   
@@ -43,12 +43,13 @@ serviceAccount:
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
   # capabilities:
   #   drop:
   #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
+
   # runAsUser: 1000
 
 containerPort:
@@ -70,12 +71,12 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   
   hosts:
-    - host: "api-wrapper.devops-learning.com"
-      paths: [/invoke]
+    - host: "<<ingress_hosts>>"
+      paths: [/<<path_app_name>>*]
   tls:
      - secretName: tls-sec
        hosts:
-        - api-wrapper.devops-learning.com
+        - <<ingress_hosts>>
 
 resources: 
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -90,34 +91,42 @@ resources:
     cpu: "3"
     memory: 2000Mi
 
-nodeSelector: {"agentpool":"default-pool"}
+nodeSelector: {"agentpool":"<<pool-name>>"}
 
 tolerations: []
 
-affinity: {}
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        topologyKey: kubernetes.io/hostname
+        labelSelector:
+          matchExpressions:
+            - {key: app, operator: In, values: [<<app_name>>]}
 
 
 persistentVolume:
    enabled: true
-   name: "api-wrapper-logs-pv"
+   name: "<<app_name>>-logs-pv"
    accessModes: ReadWriteMany
    annotations: {}
-   PVClaim: "api-wrapper-logs-pvc"
-   mountPath: "/opt/logs"
+   PVClaim: "<<app_name>>-logs-pvc"
+   mountPath: "/usr/local/tomcat/logs/<<app_name>>-logs-<<environment>>"
    size: 20Gi
-   subPath: "api-wrapper-logs-<<environment>>"
+   subPath: "<<app_name>>-logs-<<environment>>"
 
 dataPersistentVolume:
    enabled: true
-   name: "api-wrapper-data-pv"
+   name: "<<app_name>>-data-pv"
    accessModes: ReadWriteMany
    annotations: {}
-   PVClaim: "api-wrapper-data-pvc"
+   PVClaim: "<<app_name>>-data-pvc"
    mountPath: "/opt/data"
    size: 5Gi
 
 storageClass:
-   enabled: flase
+   enabled: true
    name:
    provisioner: "kubernetes.io/gce-pd"
    type: pd-standard
@@ -125,12 +134,12 @@ storageClass:
 probes:
   liveness:
     enabled: false
-    path: "/api-wrapper"
+    path: "/<<app_name>>"
     initialDelaySeconds: "5"
     periodSeconds: "5"
   readiness:
     enabled: false
-    path: "/api-wrapper"
+    path: "/<<app_name>>"
     initialDelaySeconds: "5"
     periodSeconds: "5"
     
@@ -140,6 +149,12 @@ autoscaling:
   maxReplicas: 2
   targetCPUUtilizationPercentage: 50
   targetMemoryUtilizationPercentage: 50
+
+environment:
+  enabled: false
+  config: env-configs/qa.properties
+  mountPath: /usr/local/tomcat/deployconfig
+
 
 podDisruptionBudget:
   enabled: true

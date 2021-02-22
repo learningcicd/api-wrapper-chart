@@ -3,10 +3,10 @@ kind: Service
 metadata:
   name: {{ .Release.Name }}-svc
   labels:
-{{ include "api-wrapper.labels" . | indent 4 }}
+{{ include "<<app_name>>.labels" . | indent 4 }}
 spec:
   selector:
-    app.kubernetes.io/name: {{ include "api-wrapper.name" . }}
+    app.kubernetes.io/name: {{ include "<<app_name>>.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
   type: "{{ .Values.service.type }}"
   ports:

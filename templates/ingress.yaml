@@ -10,7 +10,7 @@ kind: Ingress
 metadata:
   name: {{ .Release.Name }}-ing 
   labels:
-{{ include "api-wrapper.labels" . | indent 4 }}
+{{ include "<<app_name>>.labels" . | indent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
