@@ -1,21 +1,21 @@
-{{- $PVName := include "<<app_name>>.name" . -}}
+{{- $PVName := include "api-wrapper.name" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}-dep
   labels:
-    {{- include "<<app_name>>.labels" . | nindent 4 }}
+    {{- include "api-wrapper.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
     {{- toYaml .Values.strategy | nindent 4 }}
   selector:
     matchLabels:
-      {{- include "<<app_name>>.selectorLabels" . | nindent 6 }}
+      {{- include "api-wrapper.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "<<app_name>>.selectorLabels" . | nindent 8 }}
+        {{- include "api-wrapper.selectorLabels" . | nindent 8 }}
     spec:
       strategy:
         type: Recreate

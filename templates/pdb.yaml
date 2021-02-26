@@ -7,5 +7,5 @@ spec:
   minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
   selector:
     matchLabels:
-{{- include "<<app_name>>.labels" . | nindent 6 }}
+{{- include "api-wrapper.labels" . | nindent 6 }}
 {{- end }}

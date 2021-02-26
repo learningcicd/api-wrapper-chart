@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "<<app_name>>.name" -}}
+{{- define "api-wrapper.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "<<app_name>>.fullname" -}}
+{{- define "api-wrapper.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,16 +27,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "<<app_name>>.chart" -}}
+{{- define "api-wrapper.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Common labels
 */}}
-{{- define "<<app_name>>.labels" -}}
-helm.sh/chart: {{ include "<<app_name>>.chart" . }}
-{{ include "<<app_name>>.selectorLabels" . }}
+{{- define "api-wrapper.labels" -}}
+helm.sh/chart: {{ include "api-wrapper.chart" . }}
+{{ include "api-wrapper.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -46,18 +46,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "<<app_name>>.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "<<app_name>>.name" . }}
+{{- define "api-wrapper.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "api-wrapper.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-app: <<app_name>>
+app: api-wrapper
 {{- end -}}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "<<app_name>>.serviceAccountName" -}}
+{{- define "api-wrapper.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (include "<<app_name>>.fullname" .) .Values.serviceAccount.name }}
+    {{ default (include "api-wrapper.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}

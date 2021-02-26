@@ -10,7 +10,7 @@ strategy:
     maxUnavailable: 25%
 
 image:
-  repository: "<<container_registry_name>>/<<app_name>>"
+  repository: "<<container_registry_name>>/api-wrapper"
   tag: "<<build_tag>>"
   pullPolicy: IfNotPresent
   
@@ -103,25 +103,25 @@ affinity:
         topologyKey: kubernetes.io/hostname
         labelSelector:
           matchExpressions:
-            - {key: app, operator: In, values: [<<app_name>>]}
+            - {key: app, operator: In, values: [api-wrapper]}
 
 
 persistentVolume:
    enabled: true
-   name: "<<app_name>>-logs-pv"
+   name: "api-wrapper-logs-pv"
    accessModes: ReadWriteMany
    annotations: {}
-   PVClaim: "<<app_name>>-logs-pvc"
-   mountPath: "/usr/local/tomcat/logs/<<app_name>>-logs-<<environment>>"
+   PVClaim: "api-wrapper-logs-pvc"
+   mountPath: "/usr/local/tomcat/logs/api-wrapper-logs-<<environment>>"
    size: 20Gi
-   subPath: "<<app_name>>-logs-<<environment>>"
+   subPath: "api-wrapper-logs-<<environment>>"
 
 dataPersistentVolume:
    enabled: true
-   name: "<<app_name>>-data-pv"
+   name: "api-wrapper-data-pv"
    accessModes: ReadWriteMany
    annotations: {}
-   PVClaim: "<<app_name>>-data-pvc"
+   PVClaim: "api-wrapper-data-pvc"
    mountPath: "/opt/data"
    size: 5Gi
 
@@ -134,12 +134,12 @@ storageClass:
 probes:
   liveness:
     enabled: false
-    path: "/<<app_name>>"
+    path: "/api-wrapper"
     initialDelaySeconds: "5"
     periodSeconds: "5"
   readiness:
     enabled: false
-    path: "/<<app_name>>"
+    path: "/api-wrapper"
     initialDelaySeconds: "5"
     periodSeconds: "5"
     
